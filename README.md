@@ -7,6 +7,8 @@
 
 ▶ **데모 (자막 포함):** [한국어 `docs/demo_kr.html`](docs/demo_kr.html) · [English `docs/demo_en.html`](docs/demo_en.html) — 드롭 → 포맷 선택 → 품질 → 배경 지우기 → 다운로드 워크스루를 자막과 함께 자동 재생합니다. 자막은 [`demo_kr.vtt`](docs/demo_kr.vtt) / [`demo_en.vtt`](docs/demo_en.vtt)(WebVTT)로도 제공됩니다.
 
+📖 **사용법 글:** [`docs/usage-guide.md`](docs/usage-guide.md) — 사용법 중심으로 정리한 글(블로그·홈페이지 게시용).
+
 ## 기능
 
 - 이미지 1장 입력 — 드래그&드롭 또는 클릭해 선택 (PNG·JPG·WebP·GIF·BMP·SVG 등 브라우저가 디코드 가능한 모든 포맷)
