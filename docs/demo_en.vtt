@@ -1,0 +1,61 @@
+WEBVTT
+
+1
+00:00.000 --> 00:00.600
+Image Format Converter — auto-playing demo
+
+2
+00:00.600 --> 00:02.000
+Drag & drop an image, or click to choose
+
+3
+00:02.000 --> 00:02.900
+Drop — the file is loaded
+
+4
+00:02.900 --> 00:04.100
+Preview and file info appear
+
+5
+00:04.100 --> 00:05.400
+Pick an output format — PNG / JPEG / WebP
+
+6
+00:05.400 --> 00:06.300
+WebP selected — the size drops a lot
+
+7
+00:06.300 --> 00:07.600
+Quality slider (JPEG·WebP only)
+
+8
+00:07.600 --> 00:08.700
+Lower the quality for an even smaller file
+
+9
+00:08.700 --> 00:10.000
+Turn on background removal (color-based)
+
+10
+00:10.000 --> 00:10.900
+Toggle ON — the options appear
+
+11
+00:10.900 --> 00:12.200
+Use the eyedropper to sample the background color
+
+12
+00:12.200 --> 00:13.300
+Pixels matching that color become transparent
+
+13
+00:13.300 --> 00:14.600
+Download — save the converted file
+
+14
+00:14.600 --> 00:15.500
+Click! Saved straight from your browser
+
+15
+00:15.500 --> 00:17.700
+Done! Everything runs in your browser (no upload)
