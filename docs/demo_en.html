@@ -45,10 +45,11 @@
   .rec .dot{ width:9px; height:9px; border-radius:50%; background:var(--danger); box-shadow:0 0 8px var(--danger); animation:pulse 1.1s infinite; }
   @keyframes pulse{ 50%{ opacity:.25; } }
   .sub{ color:var(--muted); font-size:13px; }
-  .lang{ margin-top:8px; font-size:12px; }
-  .lang a{ color:var(--amber-dim); text-decoration:none; }
-  .lang a:hover{ color:var(--amber); }
-  .lang .cur{ color:var(--amber); font-weight:700; }
+  .langtoggle{ display:inline-flex; margin-top:10px; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .langtoggle a{ padding:6px 16px; font-size:12px; letter-spacing:.08em; color:var(--muted); text-decoration:none; background:var(--panel-2); transition:.12s; }
+  .langtoggle a + a{ border-left:1px solid var(--line); }
+  .langtoggle a:hover:not(.active){ color:var(--text); background:#211b12; }
+  .langtoggle a.active{ background:var(--amber); color:#1a1304; font-weight:700; }
 
   /* ---- stage (mock app) ---- */
   .stage{
@@ -164,7 +165,10 @@
     <div class="brand">CODINGNOW · IMAGE TOOL</div>
     <h1>Image Format Converter — How-to Demo<span class="rec"><span class="dot"></span>DEMO</span></h1>
     <p class="sub">The screen below plays automatically with subtitles · Drop → Format → Quality → Remove background → Download</p>
-    <div class="lang"><a href="demo_kr.html">한국어</a> · <span class="cur">English</span></div>
+    <div class="langtoggle">
+      <a href="demo_kr.html">KR</a>
+      <a href="demo_en.html" class="active">EN</a>
+    </div>
   </header>
 
   <div class="stage" id="stage">
