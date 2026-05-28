@@ -9,6 +9,8 @@
 
 📖 **사용법 글:** [`docs/usage-guide.md`](docs/usage-guide.md) — 사용법 중심으로 정리한 글(블로그·홈페이지 게시용).
 
+🧩 **재사용 프롬프트 템플릿:** [`docs/tool-prompt-template.md`](docs/tool-prompt-template.md) — 비슷한 단일 HTML 도구를 다시 만들 때 쓰는 작업 지시서 템플릿(테마·i18n·데모·검증 규약 포함).
+
 ## 기능
 
 - 이미지 1장 입력 — 드래그&드롭 또는 클릭해 선택 (PNG·JPG·WebP·GIF·BMP·SVG 등 브라우저가 디코드 가능한 모든 포맷)
