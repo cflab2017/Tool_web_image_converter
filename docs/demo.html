@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>이미지 포맷 변환기 · 데모 — CODINGNOW</title>
+<meta name="description" content="이미지 포맷 변환기 사용법 데모 — 드롭, 포맷 선택, 품질 조절, 배경 지우기, 다운로드까지 자동 재생." />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="이미지 포맷 변환기 · 사용법 데모" />
+<meta property="og:description" content="PNG·JPEG·WebP 변환과 색상 기반 배경 지우기 워크스루." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --bg:#0b0a08; --panel:#141210; --panel-2:#1c1916;
+    --amber:#ffb000; --amber-dim:#b8801f; --line:#2a251e;
+    --muted:#7a6f5c; --text:#f3e7cf;
+    --danger:#ff5f56; --ok:#7ec96b;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:"JetBrains Mono","Gowun Dodum",monospace;
+    line-height:1.5; min-height:100vh;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; z-index:9999; pointer-events:none;
+    background:repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,.18) 3px, rgba(0,0,0,.18) 3px);
+    mix-blend-mode:multiply; opacity:.5;
+  }
+  body::after{
+    content:""; position:fixed; inset:0; z-index:9998; pointer-events:none;
+    background:radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.45) 100%);
+  }
+
+  .wrap{ max-width:960px; margin:0 auto; padding:26px 16px 50px; }
+  header{ margin-bottom:16px; }
+  .brand{ font-size:11px; letter-spacing:.28em; color:var(--amber-dim); text-transform:uppercase; }
+  h1{ font-size:clamp(20px,3.6vw,30px); margin:6px 0; color:var(--amber); font-weight:700; text-shadow:0 0 14px rgba(255,176,0,.25); }
+  .rec{ display:inline-flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); margin-left:6px; vertical-align:3px; }
+  .rec .dot{ width:9px; height:9px; border-radius:50%; background:var(--danger); box-shadow:0 0 8px var(--danger); animation:pulse 1.1s infinite; }
+  @keyframes pulse{ 50%{ opacity:.25; } }
+  .sub{ color:var(--muted); font-size:13px; }
+
+  /* ---- stage (mock app) ---- */
+  .stage{
+    position:relative; border:1px solid var(--line); border-radius:12px;
+    background:var(--panel); padding:18px; overflow:hidden;
+  }
+  .winbar{ display:flex; gap:7px; margin-bottom:14px; }
+  .winbar i{ width:11px; height:11px; border-radius:50%; display:block; }
+  .winbar i:nth-child(1){ background:#ff5f56; }
+  .winbar i:nth-child(2){ background:#ffbd2e; }
+  .winbar i:nth-child(3){ background:#27c93f; }
+  .winbar .addr{ flex:1; margin-left:10px; font-size:11px; color:var(--muted); background:var(--panel-2); border:1px solid var(--line); border-radius:6px; padding:3px 10px; }
+
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:720px){ .grid{ grid-template-columns:1fr; } }
+  .card{ background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:14px; }
+  .card h2{ font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--amber-dim); margin:0 0 12px; }
+
+  .drop{ border:2px dashed var(--line); border-radius:9px; padding:26px 10px; text-align:center; transition:.25s; }
+  .drop.drag{ border-color:var(--amber); background:#211b12; box-shadow:0 0 0 3px rgba(255,176,0,.08); }
+  .drop .ico{ font-size:26px; color:var(--amber); }
+  .drop .big{ display:block; margin-top:6px; font-size:13px; }
+  .drop .small{ display:block; margin-top:3px; color:var(--muted); font-size:11px; }
+
+  .lbl{ font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin:16px 0 7px; }
+  .seg{ display:flex; gap:7px; }
+  .seg b{ flex:1; text-align:center; background:var(--panel); color:var(--muted); border:1px solid var(--line); border-radius:7px; padding:9px 0; font-weight:500; font-size:13px; transition:.2s; }
+  .seg b.active{ background:var(--amber); color:#1a1304; border-color:var(--amber); box-shadow:0 0 12px rgba(255,176,0,.3); }
+
+  .rangewrap{ display:flex; align-items:center; gap:10px; opacity:.35; transition:.25s; }
+  .rangewrap.on{ opacity:1; }
+  .track{ flex:1; height:6px; border-radius:6px; background:var(--line); position:relative; }
+  .track .fill{ position:absolute; inset:0 auto 0 0; width:80%; background:var(--amber); border-radius:6px; transition:width .5s; }
+  .track .knob{ position:absolute; top:50%; left:80%; width:16px; height:16px; border-radius:50%; background:var(--amber); border:2px solid #1a1304; transform:translate(-50%,-50%); box-shadow:0 0 8px rgba(255,176,0,.5); transition:left .5s; }
+  .rngval{ min-width:34px; text-align:right; color:var(--amber); font-weight:700; font-size:13px; }
+
+  .switch{ display:flex; align-items:center; gap:9px; font-size:13px; }
+  .switch .box{ width:34px; height:18px; border-radius:10px; background:var(--line); position:relative; transition:.25s; }
+  .switch .box i{ position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:var(--muted); transition:.25s; }
+  .switch.on .box{ background:var(--amber); }
+  .switch.on .box i{ left:18px; background:#1a1304; }
+
+  .rmopts{ max-height:0; overflow:hidden; opacity:0; transition:.3s; margin-top:0; }
+  .rmopts.on{ max-height:120px; opacity:1; margin-top:12px; }
+  .chip{ display:inline-flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); }
+  .chip .sw{ width:18px; height:18px; border-radius:5px; border:1px solid var(--line); background:#4aa3df; }
+
+  /* preview */
+  .preview{
+    border:1px solid var(--line); border-radius:9px; min-height:190px;
+    display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;
+    background-color:#2a2620;
+    background-image:
+      linear-gradient(45deg,#1c1916 25%,transparent 25%),linear-gradient(-45deg,#1c1916 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#1c1916 75%),linear-gradient(-45deg,transparent 75%,#1c1916 75%);
+    background-size:20px 20px; background-position:0 0,0 10px,10px -10px,-10px 0;
+  }
+  .preview .empty{ color:var(--muted); font-size:12px; text-align:center; }
+  .preview .empty .ic{ font-size:26px; display:block; margin-bottom:6px; opacity:.6; }
+  .demoimg{ width:78%; max-width:260px; opacity:0; transform:scale(.6); transition:.5s; }
+  .demoimg.show{ opacity:1; transform:scale(1); }
+  .demoimg .sky{ transition:opacity .6s; }
+  .demoimg.nobg .sky{ opacity:0; }
+
+  .info{ margin-top:12px; border-top:1px solid var(--line); padding-top:10px; font-size:12px; }
+  .irow{ display:flex; justify-content:space-between; padding:3px 0; }
+  .irow .k{ color:var(--muted); }
+  .irow .v{ color:var(--text); }
+  .info.hide{ opacity:0; }
+  .delta-down{ color:var(--ok); }
+
+  .dlbtn{ margin-top:12px; text-align:center; background:var(--line); color:var(--muted); border-radius:8px; padding:11px; font-weight:700; font-size:14px; transition:.25s; }
+  .dlbtn.on{ background:var(--amber); color:#1a1304; box-shadow:0 0 16px rgba(255,176,0,.25); }
+  .dlbtn.click{ transform:scale(.96); }
+
+  /* fake cursor */
+  .cursor{ position:absolute; z-index:50; width:22px; height:22px; left:50%; top:50%; pointer-events:none;
+    transition:left .7s cubic-bezier(.4,0,.2,1), top .7s cubic-bezier(.4,0,.2,1); filter:drop-shadow(0 1px 2px rgba(0,0,0,.6)); }
+  .cursor svg{ display:block; }
+  .cursor.tap{ animation:tap .35s ease; }
+  @keyframes tap{ 50%{ transform:scale(.7); } }
+
+  .toast{ position:absolute; z-index:60; left:50%; bottom:14px; transform:translateX(-50%) translateY(20px);
+    background:var(--ok); color:#0b1a07; font-size:12px; font-weight:700; padding:8px 16px; border-radius:8px; opacity:0; transition:.3s; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* caption + controls */
+  .caption{ margin-top:16px; min-height:46px; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--amber);
+    border-radius:8px; padding:12px 14px; font-size:14px; color:var(--text); }
+  .caption .step{ color:var(--amber); font-weight:700; margin-right:8px; }
+  .bar{ margin-top:12px; height:5px; background:var(--line); border-radius:5px; overflow:hidden; }
+  .bar i{ display:block; height:100%; width:0; background:var(--amber); }
+  .controls{ margin-top:14px; display:flex; gap:10px; align-items:center; }
+  .controls button{ background:var(--panel-2); color:var(--amber); border:1px solid var(--amber-dim); border-radius:7px;
+    padding:8px 16px; font-family:inherit; font-size:13px; cursor:pointer; transition:.12s; }
+  .controls button:hover{ background:var(--amber); color:#1a1304; }
+  .controls a{ margin-left:auto; color:var(--amber); font-size:13px; text-decoration:none; }
+  .controls a:hover{ text-decoration:underline; }
+
+  footer{ margin-top:26px; text-align:center; color:var(--muted); font-size:12px; border-top:1px solid var(--line); padding-top:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">CODINGNOW · IMAGE TOOL</div>
+    <h1>이미지 포맷 변환기 — 사용법 데모<span class="rec"><span class="dot"></span>DEMO</span></h1>
+    <p class="sub">아래 화면이 자동으로 재생됩니다 · 드롭 → 포맷 → 품질 → 배경 지우기 → 다운로드</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="winbar"><i></i><i></i><i></i><span class="addr">index.html — 브라우저에서 완결 · 업로드 없음</span></div>
+
+    <div class="grid">
+      <!-- left -->
+      <div class="card">
+        <h2>입력 · 설정</h2>
+        <div class="drop" id="drop">
+          <div class="ico">⬆</div>
+          <span class="big">이미지를 끌어다 놓거나 클릭해 선택</span>
+          <span class="small">PNG · JPG · WebP · GIF · BMP · SVG</span>
+        </div>
+
+        <div class="lbl">출력 포맷</div>
+        <div class="seg" id="seg">
+          <b data-f="PNG" class="active">PNG</b>
+          <b data-f="JPEG">JPEG</b>
+          <b data-f="WebP">WebP</b>
+        </div>
+
+        <div class="lbl">품질 <span style="color:var(--muted)">(JPEG·WebP)</span></div>
+        <div class="rangewrap" id="qwrap">
+          <div class="track"><div class="fill" id="qfill"></div><div class="knob" id="qknob"></div></div>
+          <span class="rngval" id="qval">80</span>
+        </div>
+
+        <div class="lbl">배경 지우기 <span style="color:var(--muted)">(색상 기반)</span></div>
+        <div class="switch" id="rmsw"><span class="box"><i></i></span><span>지정한 배경색을 투명하게 제거</span></div>
+        <div class="rmopts" id="rmopts">
+          <div class="chip" style="margin-top:10px;"><span class="sw" id="keysw"></span> 추출된 배경색 · 허용 오차 30</div>
+        </div>
+      </div>
+
+      <!-- right -->
+      <div class="card">
+        <h2>결과</h2>
+        <div class="preview" id="preview">
+          <div class="empty" id="empty"><span class="ic">▦</span>이미지 대기 중…</div>
+          <svg class="demoimg" id="demoimg" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+            <g class="sky">
+              <rect width="200" height="150" rx="6" fill="#4aa3df"/>
+              <rect y="105" width="200" height="45" fill="#6fc06a"/>
+            </g>
+            <circle cx="155" cy="38" r="20" fill="#ffd54a"/>
+            <polygon points="40,105 80,45 120,105" fill="#7a5a3a"/>
+            <polygon points="95,105 130,60 165,105" fill="#5e442b"/>
+            <polygon points="62,78 80,52 98,78" fill="#fff"/>
+          </svg>
+          <div class="toast" id="toast">✓ photo.webp 저장됨</div>
+        </div>
+
+        <div class="info hide" id="info">
+          <div class="irow"><span class="k">파일명</span><span class="v" id="vName">photo.png</span></div>
+          <div class="irow"><span class="k">해상도</span><span class="v">1920 × 1280 px</span></div>
+          <div class="irow"><span class="k">원본 용량</span><span class="v">2.41 MB</span></div>
+          <div class="irow"><span class="k">변환 후</span><span class="v" id="vNew">2.41 MB</span></div>
+          <div class="irow"><span class="k">증감률</span><span class="v" id="vDelta">±0%</span></div>
+        </div>
+
+        <div class="dlbtn" id="dl">다운로드</div>
+      </div>
+    </div>
+
+    <!-- fake cursor -->
+    <div class="cursor" id="cursor">
+      <svg width="22" height="22" viewBox="0 0 22 22"><path d="M2 2 L2 17 L6 13 L9 20 L12 19 L9 12 L15 12 Z" fill="#fff" stroke="#1a1304" stroke-width="1.2"/></svg>
+    </div>
+  </div>
+
+  <div class="caption" id="caption"><span class="step">DEMO</span>재생을 시작합니다…</div>
+  <div class="bar"><i id="barfill"></i></div>
+
+  <div class="controls">
+    <button id="replay">↻ 다시 재생</button>
+    <button id="pause">⏸ 일시정지</button>
+    <a href="../index.html">→ 변환기 열기</a>
+  </div>
+
+  <footer>이미지 포맷 변환기 · 순수 클라이언트 사이드 · 서버 업로드 없음</footer>
+</div>
+
+<script>
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const stage = $("stage"), cursor = $("cursor");
+
+  // move the fake cursor to the center of a target element (within the stage)
+  function moveTo(el, dx = 0, dy = 0){
+    const s = stage.getBoundingClientRect(), r = el.getBoundingClientRect();
+    cursor.style.left = (r.left - s.left + r.width / 2 + dx) + "px";
+    cursor.style.top  = (r.top  - s.top  + r.height / 2 + dy) + "px";
+  }
+  function tap(){ cursor.classList.remove("tap"); void cursor.offsetWidth; cursor.classList.add("tap"); }
+  function setFormat(f){
+    [...$("seg").children].forEach((b) => b.classList.toggle("active", b.dataset.f === f));
+  }
+  function setQuality(pct){
+    $("qfill").style.width = pct + "%"; $("qknob").style.left = pct + "%"; $("qval").textContent = pct;
+  }
+  function setNew(size, delta){
+    $("vNew").textContent = size;
+    $("vDelta").textContent = delta;
+    $("vDelta").className = "v" + (delta.startsWith("▼") ? " delta-down" : "");
+  }
+
+  // timeline: [delayAfterMs, label, action]
+  const steps = [
+    [600,  "DEMO", "이미지 포맷 변환기 — 자동 재생 데모", () => { reset(); }],
+    [1400, "①", "이미지를 끌어다 놓거나 클릭해 선택", () => {
+      moveTo($("drop")); }],
+    [900,  "①", "드롭 — 파일을 받습니다", () => {
+      tap(); $("drop").classList.add("drag"); }],
+    [1200, "①", "원본 미리보기와 정보가 표시됩니다", () => {
+      $("drop").classList.remove("drag"); $("empty").style.display = "none";
+      $("demoimg").classList.add("show"); $("info").classList.remove("hide"); }],
+    [1300, "②", "출력 포맷 선택 — PNG / JPEG / WebP", () => {
+      moveTo($("seg").children[2]); }],
+    [900,  "②", "WebP 선택 — 용량이 크게 줄어듭니다", () => {
+      tap(); setFormat("WebP"); $("vName").textContent = "photo.webp";
+      setNew("0.86 MB", "▼ -64.3%"); $("dl").classList.add("on"); }],
+    [1300, "③", "품질 슬라이더 (JPEG·WebP만)", () => {
+      $("qwrap").classList.add("on"); moveTo($("qknob")); }],
+    [1100, "③", "품질을 낮추면 용량이 더 작아집니다", () => {
+      tap(); setQuality(55); setNew("0.52 MB", "▼ -78.4%"); }],
+    [1300, "④", "배경 지우기 (색상 기반) 켜기", () => {
+      moveTo($("rmsw")); }],
+    [900,  "④", "토글 ON — 옵션이 나타납니다", () => {
+      tap(); $("rmsw").classList.add("on"); $("rmopts").classList.add("on"); }],
+    [1300, "④", "스포이드로 미리보기의 배경색을 추출", () => {
+      moveTo($("demoimg"), -60, -40); }],
+    [1100, "④", "추출한 색과 일치하는 배경이 투명해집니다", () => {
+      tap(); $("demoimg").classList.add("nobg"); }],
+    [1300, "⑤", "다운로드 — 변환된 파일을 저장", () => {
+      moveTo($("dl")); }],
+    [900,  "⑤", "클릭! 브라우저에서 바로 저장됩니다", () => {
+      tap(); $("dl").classList.add("click"); $("toast").classList.add("show"); }],
+    [2200, "✓", "끝! 모든 변환은 브라우저에서만 처리됩니다 (업로드 없음)", () => {
+      $("dl").classList.remove("click"); }],
+  ];
+
+  function reset(){
+    $("drop").classList.remove("drag");
+    $("empty").style.display = "block";
+    $("demoimg").classList.remove("show", "nobg");
+    $("info").classList.add("hide");
+    $("qwrap").classList.remove("on");
+    $("rmsw").classList.remove("on"); $("rmopts").classList.remove("on");
+    $("dl").classList.remove("on", "click"); $("toast").classList.remove("show");
+    setFormat("PNG"); setQuality(80);
+    $("vName").textContent = "photo.png"; setNew("2.41 MB", "±0%");
+    moveTo($("drop"), 0, -60);
+  }
+
+  let timer = null, idx = 0, paused = false;
+  const total = steps.reduce((a, s) => a + s[0], 0);
+  let elapsed = 0;
+
+  function runStep(){
+    if (idx >= steps.length){ idx = 0; elapsed = 0; }
+    const [delay, label, text, action] = steps[idx];
+    $("caption").innerHTML = '<span class="step">' + label + "</span>" + text;
+    if (action) action();
+    elapsed += delay;
+    $("barfill").style.width = Math.min(100, (elapsed / total) * 100) + "%";
+    idx++;
+    timer = setTimeout(runStep, delay);
+  }
+  function start(){ clearTimeout(timer); idx = 0; elapsed = 0; reset(); timer = setTimeout(runStep, 400); }
+
+  $("replay").addEventListener("click", () => { paused = false; $("pause").textContent = "⏸ 일시정지"; start(); });
+  $("pause").addEventListener("click", () => {
+    paused = !paused;
+    if (paused){ clearTimeout(timer); $("pause").textContent = "▶ 계속"; }
+    else { $("pause").textContent = "⏸ 일시정지"; runStep(); }
+  });
+
+  window.addEventListener("load", () => { reset(); start(); });
+  reset();
+</script>
+</body>
+</html>
